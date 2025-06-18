@@ -38,7 +38,23 @@ gem "kamal", require: false
 gem "thruster", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-# gem "image_processing", "~> 1.2"
+gem "image_processing", "~> 1.2"
+
+# Additional image processing for PDF thumbnails
+gem "mini_magick", "~> 4.12"
+
+# PDF processing for dimension validation and metadata removal
+gem "pdf-reader", "~> 2.11"
+gem "prawn", "~> 2.4"
+
+# Box.com API integration for remote file storage
+gem "boxr", "~> 1.21"
+
+# Pagination for infinite scrolling
+gem "pagy", "~> 8.0"
+
+# User authentication and registration
+gem "devise", "~> 4.9"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

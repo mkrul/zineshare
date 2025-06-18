@@ -1,0 +1,52 @@
+<div class="page-header">
+  <h1 class="page-title">Zineshare</h1>
+  <p class="page-subtitle">Discover and share creative zines from our community</p>
+</div>
+
+<!-- Category Filter -->
+<div class="filter-section">
+  <div class="filter-container">
+    <label for="category-filter" class="filter-label">Filter by Category:</label>
+    <select id="category-filter" class="filter-select" data-controller="category-filter" data-action="change->category-filter#filterChanged">
+      <option value="all" <%= 'selected' unless @selected_category %>>All Categories</option>
+      <% @categories.each do |category| %>
+        <option value="<%= category.id %>" <%= 'selected' if @selected_category&.id == category.id %>>
+          <%= category.name %>
+        </option>
+      <% end %>
+    </select>
+  </div>
+</div>
+
+<!-- Zines Grid -->
+<div id="zines-container" class="zines-container">
+  <% if @zines.any? %>
+    <div class="zines-grid" id="zines-grid">
+      <%= render partial: 'zine_card', collection: @zines, as: :zine %>
+    </div>
+
+    <!-- Infinite Scroll Trigger -->
+    <% if @pagy.next %>
+      <div id="load-more-trigger"
+           data-controller="infinite-scroll"
+           data-infinite-scroll-url-value="<%= url_for(page: @pagy.next, category_id: params[:category_id]) %>"
+           class="load-more-trigger">
+        <div class="loading-spinner">
+          <div class="spinner"></div>
+          <p>Loading more zines...</p>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="empty-state">
+      <h3>No zines found</h3>
+      <% if @selected_category %>
+        <p>No approved zines in the "<%= @selected_category.name %>" category yet.</p>
+        <%= link_to "View All Categories", root_path, class: "btn btn-secondary" %>
+      <% else %>
+        <p>Be the first to share your zine with the community!</p>
+      <% end %>
+      <%= link_to "Upload Your Zine", new_zine_path, class: "btn btn-primary" %>
+    </div>
+  <% end %>
+</div>

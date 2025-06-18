@@ -23,6 +23,39 @@
   </head>
 
   <body>
-    <%= yield %>
+    <nav class="navbar">
+      <div class="nav-container">
+        <%= link_to "Zineshare", root_path, class: "nav-brand" %>
+        <div class="nav-links">
+          <%= link_to "Browse Zines", root_path, class: "nav-link" %>
+          <%= link_to "Upload Zine", new_zine_path, class: "nav-link nav-link-primary" %>
+
+          <% if user_signed_in? %>
+            <div class="nav-user">
+              <span class="nav-user-email"><%= current_user.email %></span>
+              <%= link_to "Account", edit_user_registration_path, class: "nav-link" %>
+              <%= link_to "Sign Out", destroy_user_session_path, method: :delete, class: "nav-link" %>
+            </div>
+          <% else %>
+            <div class="nav-auth">
+              <%= link_to "Sign In", new_user_session_path, class: "nav-link" %>
+              <%= link_to "Sign Up", new_user_registration_path, class: "nav-link nav-link-secondary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      <% if notice %>
+        <div class="alert alert-success"><%= notice %></div>
+      <% end %>
+
+      <% if alert %>
+        <div class="alert alert-error"><%= alert %></div>
+      <% end %>
+
+      <%= yield %>
+    </main>
   </body>
 </html>

@@ -1,0 +1,28 @@
+<div class="zine-card">
+  <%= link_to zine, class: "zine-link" do %>
+    <div class="zine-thumbnail">
+      <%= image_tag zine.thumbnail_url,
+          alt: "Zine by #{zine.created_by}",
+          class: "thumbnail-image",
+          loading: "lazy" %>
+      <% unless zine.file_available? %>
+        <div class="unavailable-overlay">
+          <span class="unavailable-text">Temporarily Unavailable</span>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="zine-info">
+      <div class="zine-title">Zine by <%= zine.created_by %></div>
+      <div class="zine-meta">
+        <span class="zine-category"><%= zine.category.name %></span>
+        <span class="zine-date">• <%= zine.created_at.strftime("%B %d, %Y") %></span>
+      </div>
+      <% if zine.file_available? %>
+        <p class="zine-description">PDF ready for viewing</p>
+      <% else %>
+        <p class="zine-description zine-unavailable">PDF temporarily unavailable</p>
+      <% end %>
+    </div>
+  <% end %>
+</div>

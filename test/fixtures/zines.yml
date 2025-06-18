@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  created_by: MyString
+  category: one
+  approved: false
+
+two:
+  created_by: MyString
+  category: two
+  approved: false

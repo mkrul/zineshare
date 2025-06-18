@@ -1,0 +1,36 @@
+<div class="page-header">
+  <h1 class="page-title">Sign In</h1>
+  <p class="page-subtitle">Welcome back to Zineshare</p>
+</div>
+
+<div class="form-container">
+  <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+    <div class="form-group">
+      <%= f.label :email, "Email Address", class: "form-label" %>
+      <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control", placeholder: "your@email.com" %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :password, class: "form-label" %>
+      <%= f.password_field :password, autocomplete: "current-password", class: "form-control", placeholder: "Your password" %>
+    </div>
+
+    <% if devise_mapping.rememberable? %>
+      <div class="form-group">
+        <div class="form-check">
+          <%= f.check_box :remember_me, class: "form-check-input" %>
+          <%= f.label :remember_me, "Remember me", class: "form-check-label" %>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="form-actions">
+      <%= f.submit "Sign In", class: "btn btn-primary" %>
+      <%= link_to "Cancel", root_path, class: "btn btn-secondary" %>
+    </div>
+  <% end %>
+
+  <div class="auth-links">
+    <%= render "devise/shared/links" %>
+  </div>
+</div>

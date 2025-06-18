@@ -1,0 +1,17 @@
+<%= turbo_stream.append "zines-grid" do %>
+  <%= render partial: 'zine_card', collection: zines, as: :zine %>
+<% end %>
+
+<%= turbo_stream.replace "load-more-trigger" do %>
+  <% if pagy.next %>
+    <div id="load-more-trigger"
+         data-controller="infinite-scroll"
+         data-infinite-scroll-url-value="<%= url_for(page: pagy.next, category_id: params[:category_id]) %>"
+         class="load-more-trigger">
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Loading more zines...</p>
+      </div>
+    </div>
+  <% end %>
+<% end %>
