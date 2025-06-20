@@ -10,8 +10,17 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
+  # Admin routes
+  get 'admin', to: 'admin#index'
+  patch 'admin/zines/:id/approve', to: 'admin#approve', as: 'admin_approve_zine'
+  delete 'admin/zines/:id/reject', to: 'admin#reject', as: 'admin_reject_zine'
+  delete 'admin/zines/:id', to: 'admin#destroy', as: 'admin_destroy_zine'
+
+  # User dashboard
+  get 'dashboard', to: 'users#dashboard'
+
   # Zines routes
-  resources :zines, only: [:index, :show, :new, :create]
+  resources :zines, only: [:index, :show, :new, :create, :edit, :update, :destroy]
 
   # Defines the root path route ("/")
   root "zines#index"

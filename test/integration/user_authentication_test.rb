@@ -24,7 +24,7 @@ class UserAuthenticationTest < ActionDispatch::IntegrationTest
     end
 
     # Should redirect and auto-login after successful registration
-    assert_redirected_to root_path
+    assert_redirected_to dashboard_path
     follow_redirect!
     assert_select ".nav-user-email", "newuser@example.com"
   end
@@ -59,7 +59,7 @@ class UserAuthenticationTest < ActionDispatch::IntegrationTest
       }
     }
 
-    assert_redirected_to root_path
+    assert_redirected_to dashboard_path
     follow_redirect!
     assert_select ".nav-user-email", @user.email
   end
@@ -93,6 +93,7 @@ class UserAuthenticationTest < ActionDispatch::IntegrationTest
     get root_path
     assert_response :success
     assert_select ".nav-user-email", @user.email
+    assert_select "a[href='#{dashboard_path}']", "Dashboard"
     assert_select "a[href='#{edit_user_registration_path}']", "Account"
     assert_select "a[href='#{destroy_user_session_path}']", "Sign Out"
   end

@@ -1,16 +1,26 @@
-<h2>Resend unlock instructions</h2>
-
-<%= form_for(resource, as: resource_name, url: unlock_path(resource_name), html: { method: :post }) do |f| %>
-  <%= render "devise/shared/error_messages", resource: resource %>
-
-  <div class="field">
-    <%= f.label :email %><br />
-    <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
+<div class="page-header">
+  <div class="header-content">
+    <h1 class="page-title">Unlock Your Account</h1>
+    <p class="page-subtitle">Enter your email to receive unlock instructions</p>
   </div>
+</div>
 
-  <div class="actions">
-    <%= f.submit "Resend unlock instructions" %>
+<div class="form-container">
+  <%= form_for(resource, as: resource_name, url: unlock_path(resource_name), html: { method: :post }) do |f| %>
+    <%= render "devise/shared/error_messages", resource: resource %>
+
+    <div class="form-group">
+      <%= f.label :email, "Email Address", class: "form-label" %>
+      <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control", placeholder: "your@email.com" %>
+    </div>
+
+    <div class="form-actions">
+      <%= f.submit "Send Unlock Instructions", class: "btn btn-primary" %>
+      <%= link_to "Cancel", new_user_session_path, class: "btn btn-secondary" %>
+    </div>
+  <% end %>
+
+  <div class="auth-links">
+    <%= render "devise/shared/links" %>
   </div>
-<% end %>
-
-<%= render "devise/shared/links" %>
+</div>

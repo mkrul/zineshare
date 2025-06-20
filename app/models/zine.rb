@@ -1,20 +1,36 @@
 class Zine < ApplicationRecord
   belongs_to :category
+  belongs_to :user, optional: true
 
   has_one_attached :pdf_file
   has_one_attached :thumbnail
 
+  validates :title, presence: true, length: { maximum: 100 }
   validates :created_by, presence: true
   validates :pdf_file, presence: true, unless: -> { Rails.env.test? }
   validate :pdf_file_must_be_pdf, unless: -> { Rails.env.test? }
+  validate :pdf_file_size_within_limit, unless: -> { Rails.env.test? }
   validate :pdf_dimensions_must_be_correct, unless: -> { Rails.env.test? }
+
+  scope :approved, -> { where(pending_moderation: false) }
+  scope :pending_moderation, -> { where(pending_moderation: true) }
 
   after_create :upload_to_box, if: -> { pdf_file.attached? && !Rails.env.test? }
   after_create :generate_thumbnail, if: -> { pdf_file.attached? }
+  after_create :notify_admin, unless: -> { Rails.env.test? }
   before_destroy :delete_from_box
 
-  scope :approved, -> { where(approved: true) }
-  scope :pending, -> { where(approved: false) }
+  def approved?
+    !pending_moderation?
+  end
+
+  def approve!
+    update!(pending_moderation: false)
+  end
+
+  def reject!
+    destroy
+  end
 
   def box_download_url
     return nil unless box_file_id.present?
@@ -51,6 +67,14 @@ class Zine < ApplicationRecord
 
     unless pdf_file.content_type == 'application/pdf'
       errors.add(:pdf_file, 'must be a PDF file')
+    end
+  end
+
+  def pdf_file_size_within_limit
+    return unless pdf_file.attached?
+
+    if pdf_file.blob.byte_size > 10.megabytes
+      errors.add(:pdf_file, 'must be within 10MB')
     end
   end
 
@@ -171,5 +195,15 @@ class Zine < ApplicationRecord
     # This method is now handled during the Box upload process
     # Metadata stripping can be implemented as part of the upload pipeline
     Rails.logger.info "PDF metadata stripping integrated with Box upload for zine #{id}"
+  end
+
+  def notify_admin
+    begin
+      AdminNotificationMailer.new_zine_notification(self).deliver_now
+      Rails.logger.info "Admin notification email sent for zine #{id}"
+    rescue => e
+      Rails.logger.error "Failed to send admin notification for zine #{id}: #{e.message}"
+      # Don't fail the save if email sending fails
+    end
   end
 end

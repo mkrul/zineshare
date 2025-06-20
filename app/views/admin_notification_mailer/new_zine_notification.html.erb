@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>New Zine Uploaded</title>
+    <style>
+      body { font-family: Arial, sans-serif; color: #333; }
+      .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+      .header { background: #007bff; color: white; padding: 20px; text-align: center; }
+      .content { padding: 20px; background: #f8f9fa; }
+      .zine-info { background: white; padding: 15px; border-radius: 5px; margin: 15px 0; }
+      .btn { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>New Zine Uploaded</h1>
+      </div>
+
+      <div class="content">
+        <p>A new zine has been uploaded to ZineShare!</p>
+
+        <div class="zine-info">
+          <h2><%= @zine.title %></h2>
+          <p><strong>Creator:</strong> <%= @zine.created_by %></p>
+          <p><strong>Category:</strong> <%= @zine.category.name %></p>
+          <p><strong>Uploaded:</strong> <%= @zine.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>
+          <% if @zine.user %>
+            <p><strong>User Email:</strong> <%= @zine.user.email %></p>
+          <% end %>
+        </div>
+
+        <p>
+          <a href="<%= @zine_url %>" class="btn">View Zine</a>
+        </p>
+
+        <p style="color: #666; font-size: 14px;">
+          This is an automated notification from ZineShare.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

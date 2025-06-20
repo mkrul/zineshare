@@ -2,7 +2,7 @@
   <%= link_to zine, class: "zine-link" do %>
     <div class="zine-thumbnail">
       <%= image_tag zine.thumbnail_url,
-          alt: "Zine by #{zine.created_by}",
+          alt: zine.title,
           class: "thumbnail-image",
           loading: "lazy" %>
       <% unless zine.file_available? %>
@@ -13,7 +13,8 @@
     </div>
 
     <div class="zine-info">
-      <div class="zine-title">Zine by <%= zine.created_by %></div>
+      <div class="zine-title"><%= zine.title %></div>
+      <div class="zine-creator">by <%= zine.created_by %></div>
       <div class="zine-meta">
         <span class="zine-category"><%= zine.category.name %></span>
         <span class="zine-date">• <%= zine.created_at.strftime("%B %d, %Y") %></span>

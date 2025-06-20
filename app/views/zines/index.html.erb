@@ -1,6 +1,8 @@
 <div class="page-header">
-  <h1 class="page-title">Zineshare</h1>
-  <p class="page-subtitle">Discover and share creative zines from our community</p>
+  <div class="header-content">
+    <h1 class="page-title">Zineshare</h1>
+    <p class="page-subtitle">Discover and share creative zines from our community</p>
+  </div>
 </div>
 
 <!-- Category Filter -->
@@ -41,7 +43,7 @@
     <div class="empty-state">
       <h3>No zines found</h3>
       <% if @selected_category %>
-        <p>No approved zines in the "<%= @selected_category.name %>" category yet.</p>
+        <p>No zines in the "<%= @selected_category.name %>" category yet.</p>
         <%= link_to "View All Categories", root_path, class: "btn btn-secondary" %>
       <% else %>
         <p>Be the first to share your zine with the community!</p>

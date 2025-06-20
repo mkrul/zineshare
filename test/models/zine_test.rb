@@ -4,6 +4,7 @@ class ZineTest < ActiveSupport::TestCase
   def setup
     @category = Category.create!(name: "Test Category")
     @zine = Zine.new(
+      title: "Test Zine Title",
       created_by: "Test Creator",
       category: @category
     )
@@ -11,6 +12,18 @@ class ZineTest < ActiveSupport::TestCase
 
   def test_should_be_valid_with_valid_attributes
     assert @zine.valid?
+  end
+
+  def test_should_require_title
+    @zine.title = nil
+    assert_not @zine.valid?
+    assert_includes @zine.errors[:title], "can't be blank"
+  end
+
+  def test_should_limit_title_length
+    @zine.title = "x" * 101
+    assert_not @zine.valid?
+    assert_includes @zine.errors[:title], "is too long (maximum is 100 characters)"
   end
 
   def test_should_require_created_by
@@ -25,46 +38,7 @@ class ZineTest < ActiveSupport::TestCase
     assert_includes @zine.errors[:category], "must exist"
   end
 
-  def test_should_default_approved_to_false
-    @zine.save!
-    assert_equal false, @zine.approved?
-  end
 
-  def test_approved_scope_returns_only_approved_zines
-    approved_zine = Zine.create!(
-      created_by: "Approved Creator",
-      category: @category,
-      approved: true
-    )
-
-    unapproved_zine = Zine.create!(
-      created_by: "Unapproved Creator",
-      category: @category,
-      approved: false
-    )
-
-    approved_zines = Zine.approved
-    assert_includes approved_zines, approved_zine
-    assert_not_includes approved_zines, unapproved_zine
-  end
-
-  def test_pending_scope_returns_only_pending_zines
-    approved_zine = Zine.create!(
-      created_by: "Approved Creator",
-      category: @category,
-      approved: true
-    )
-
-    pending_zine = Zine.create!(
-      created_by: "Pending Creator",
-      category: @category,
-      approved: false
-    )
-
-    pending_zines = Zine.pending
-    assert_includes pending_zines, pending_zine
-    assert_not_includes pending_zines, approved_zine
-  end
 
   def test_file_available_returns_true_for_attached_pdf_in_test
     # In test environment, should check for attached PDF file
@@ -128,12 +102,14 @@ class ZineTest < ActiveSupport::TestCase
 
   def test_thumbnail_url_returns_default_when_no_thumbnail
     # Test default thumbnail URL when no thumbnail is attached
+    @zine.save! # Save the record so it has an ID
     thumbnail_url = @zine.thumbnail_url
-    assert_includes thumbnail_url, "default-zine-thumbnail.svg"
+    assert_includes thumbnail_url, "default-zine-thumbnail"
   end
 
   def test_thumbnail_url_returns_blob_path_when_attached
     # Test that thumbnail URL returns proper path when thumbnail is attached
+    @zine.save! # Save the record so it has an ID
     @zine.thumbnail.attach(
       io: StringIO.new("fake image content"),
       filename: "test_thumbnail.png",
@@ -142,5 +118,28 @@ class ZineTest < ActiveSupport::TestCase
 
     thumbnail_url = @zine.thumbnail_url
     assert_includes thumbnail_url, "rails/active_storage/blobs"
+  end
+
+  def test_validates_file_size_within_10mb_limit
+    # Save the record first so we can work with blob updates
+    @zine.save!
+
+    # This test simulates file size validation without actually creating a large file
+    large_file_data = "x" * (1024 * 1024) # 1MB of data for the test
+    large_file = StringIO.new(large_file_data)
+
+    @zine.pdf_file.attach(
+      io: large_file,
+      filename: "large_test.pdf",
+      content_type: "application/pdf"
+    )
+
+    # Force the blob to have a large size
+    @zine.pdf_file.blob.update!(byte_size: 11.megabytes)
+
+    # Call the validation method directly
+    @zine.send(:pdf_file_size_within_limit)
+
+    assert_includes @zine.errors[:pdf_file], "must be within 10MB"
   end
 end

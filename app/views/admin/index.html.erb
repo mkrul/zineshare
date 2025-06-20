@@ -1,0 +1,97 @@
+<div class="page-header">
+  <div class="header-content">
+    <h1 class="page-title">Admin Dashboard</h1>
+    <p class="page-subtitle">Manage zine submissions and content moderation</p>
+  </div>
+</div>
+
+<div class="admin-stats">
+  <div class="stat-card pending">
+    <h3><%= @pending_count %></h3>
+    <p>Pending Moderation</p>
+  </div>
+  <div class="stat-card approved">
+    <h3><%= @approved_count %></h3>
+    <p>Approved Zines</p>
+  </div>
+  <div class="stat-card total">
+    <h3><%= @total_count %></h3>
+    <p>Total Zines</p>
+  </div>
+</div>
+
+<div class="admin-content">
+  <h2>All Zines</h2>
+
+  <% if @zines.any? %>
+    <div class="admin-table">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Thumbnail</th>
+            <th>Title</th>
+            <th>Creator</th>
+            <th>Category</th>
+            <th>Uploader</th>
+            <th>Upload Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @zines.each do |zine| %>
+            <tr class="<%= 'pending-row' if zine.pending_moderation? %>">
+              <td>
+                <% if zine.pending_moderation? %>
+                  <span class="status-badge pending">Pending</span>
+                <% else %>
+                  <span class="status-badge approved">Approved</span>
+                <% end %>
+              </td>
+              <td>
+                <%= link_to zine_path(zine), target: "_blank" do %>
+                  <img src="<%= zine.thumbnail_url %>" alt="<%= zine.title %>" class="admin-thumbnail">
+                <% end %>
+              </td>
+              <td>
+                <%= link_to zine.title, zine_path(zine), class: "zine-link", target: "_blank" %>
+              </td>
+              <td><%= zine.created_by %></td>
+              <td><span class="category-badge"><%= zine.category.name %></span></td>
+              <td><%= zine.user&.email || "Unknown" %></td>
+              <td><%= zine.created_at.strftime("%b %d, %Y at %I:%M %p") %></td>
+              <td>
+                <div class="admin-actions">
+                  <% if zine.pending_moderation? %>
+                    <%= link_to "Approve", admin_approve_zine_path(zine),
+                        method: :patch, class: "btn btn-sm btn-success",
+                        confirm: "Are you sure you want to approve this zine?" %>
+                    <%= link_to "Reject", admin_reject_zine_path(zine),
+                        method: :delete, class: "btn btn-sm btn-warning",
+                        confirm: "Are you sure you want to reject and delete this zine? This action cannot be undone." %>
+                  <% end %>
+                  <%= link_to "Delete", admin_destroy_zine_path(zine),
+                      method: :delete, class: "btn btn-sm btn-danger",
+                      confirm: "Are you sure you want to permanently delete this zine? This action cannot be undone." %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <% if @pagy.pages > 1 %>
+      <div class="pagination-container">
+        <%== pagy_nav(@pagy) %>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="empty-state">
+      <h3>No zines to moderate</h3>
+      <p>All submissions are up to date!</p>
+    </div>
+  <% end %>
+</div>
+

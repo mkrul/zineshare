@@ -21,8 +21,8 @@ class CategoryTest < ActiveSupport::TestCase
 
   def test_should_have_many_zines
     category = Category.create!(name: "Test Category")
-    zine1 = Zine.create!(created_by: "Creator 1", category: category)
-    zine2 = Zine.create!(created_by: "Creator 2", category: category)
+    zine1 = Zine.create!(title: "Zine 1", created_by: "Creator 1", category: category)
+    zine2 = Zine.create!(title: "Zine 2", created_by: "Creator 2", category: category)
 
     assert_includes category.zines, zine1
     assert_includes category.zines, zine2
@@ -31,7 +31,7 @@ class CategoryTest < ActiveSupport::TestCase
 
   def test_should_not_allow_deletion_with_associated_zines
     category = Category.create!(name: "Test Category")
-    Zine.create!(created_by: "Creator", category: category)
+    Zine.create!(title: "Test Zine", created_by: "Creator", category: category)
 
     assert_raises(ActiveRecord::RecordNotDestroyed) do
       category.destroy!

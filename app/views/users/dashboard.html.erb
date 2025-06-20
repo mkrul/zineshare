@@ -1,0 +1,159 @@
+<div class="page-header">
+  <div class="header-content">
+    <h1 class="page-title">My Dashboard</h1>
+    <p class="page-subtitle">Manage your uploaded zines</p>
+  </div>
+</div>
+
+<div class="dashboard-stats">
+  <div class="stat-card">
+    <h3><%= current_user.zines.count %></h3>
+    <p>Total Zines Uploaded</p>
+  </div>
+  <div class="stat-card">
+    <h3><%= @zines.count %></h3>
+    <p>Showing This Page</p>
+  </div>
+</div>
+
+<div class="dashboard-actions">
+  <%= link_to "Upload New Zine", new_zine_path, class: "btn btn-primary" %>
+  <%= link_to "Browse All Zines", root_path, class: "btn btn-secondary" %>
+</div>
+
+<div class="user-zines">
+  <div class="zines-header">
+    <h2>Your Zines</h2>
+    <div class="view-toggle">
+      <button class="view-btn active" data-view="grid">Grid View</button>
+      <button class="view-btn" data-view="list">List View</button>
+    </div>
+  </div>
+
+  <% if @zines.any? %>
+    <!-- Grid View -->
+    <div id="grid-view" class="zines-grid">
+      <% @zines.each do |zine| %>
+        <div class="zine-card">
+          <div class="zine-thumbnail">
+            <%= link_to zine_path(zine) do %>
+              <img src="<%= zine.thumbnail_url %>" alt="<%= zine.created_by %>" loading="lazy">
+            <% end %>
+          </div>
+          <div class="zine-info">
+            <h3 class="zine-title">
+              <%= link_to zine_path(zine) do %>
+                <%= zine.title %>
+              <% end %>
+              <% if zine.pending_moderation? %>
+                <span class="status-badge pending">Pending Review</span>
+              <% end %>
+            </h3>
+            <p class="zine-creator">by <%= zine.created_by %></p>
+            <p class="zine-category"><%= zine.category.name %></p>
+            <p class="zine-date">Uploaded <%= zine.created_at.strftime("%b %d, %Y") %></p>
+            <div class="zine-actions">
+              <%= link_to "View", zine_path(zine), class: "btn btn-sm btn-primary" %>
+              <%= link_to "Edit", edit_zine_path(zine), class: "btn btn-sm btn-secondary" %>
+              <%= link_to "Delete", zine_path(zine), method: :delete,
+                  class: "btn btn-sm btn-danger",
+                  confirm: "Are you sure you want to delete this zine? This action cannot be undone." %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- List View -->
+    <div id="list-view" class="zines-table" style="display: none;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Thumbnail</th>
+            <th>Title</th>
+            <th>Creator</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Upload Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @zines.each do |zine| %>
+            <tr>
+              <td>
+                <%= link_to zine_path(zine) do %>
+                  <img src="<%= zine.thumbnail_url %>" alt="<%= zine.title %>" class="table-thumbnail">
+                <% end %>
+              </td>
+              <td>
+                <%= link_to zine.title, zine_path(zine), class: "zine-link" %>
+              </td>
+              <td><%= zine.created_by %></td>
+              <td><span class="category-badge"><%= zine.category.name %></span></td>
+              <td>
+                <% if zine.pending_moderation? %>
+                  <span class="status-badge pending">Pending Review</span>
+                <% else %>
+                  <span class="status-badge approved">Live</span>
+                <% end %>
+              </td>
+              <td><%= zine.created_at.strftime("%b %d, %Y at %I:%M %p") %></td>
+              <td>
+                <div class="action-buttons">
+                  <%= link_to "View", zine_path(zine), class: "btn btn-sm btn-primary" %>
+                  <%= link_to "Edit", edit_zine_path(zine), class: "btn btn-sm btn-secondary" %>
+                  <%= link_to "Delete", zine_path(zine), method: :delete,
+                      class: "btn btn-sm btn-danger",
+                      confirm: "Are you sure you want to delete this zine? This action cannot be undone." %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <% if @pagy.pages > 1 %>
+      <div class="pagination-container">
+        <%== pagy_nav(@pagy) %>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="empty-state">
+      <h3>No zines uploaded yet</h3>
+      <p>Share your creativity with the community!</p>
+      <%= link_to "Upload Your First Zine", new_zine_path, class: "btn btn-primary" %>
+    </div>
+  <% end %>
+</div>
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const viewButtons = document.querySelectorAll('.view-btn');
+  const gridView = document.getElementById('grid-view');
+  const listView = document.getElementById('list-view');
+
+  viewButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const view = this.dataset.view;
+
+      // Update active button
+      viewButtons.forEach(btn => btn.classList.remove('active'));
+      this.classList.add('active');
+
+      // Toggle views
+      if (view === 'grid') {
+        gridView.style.display = 'grid';
+        listView.style.display = 'none';
+      } else {
+        gridView.style.display = 'none';
+        listView.style.display = 'block';
+      }
+    });
+  });
+});
+</script>

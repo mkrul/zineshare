@@ -13,9 +13,12 @@
     <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
     <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
 
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
+    <link rel="icon" href="/icon.png" sizes="32x32" type="image/png">
+    <meta name="theme-color" content="#007bff">
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
@@ -26,22 +29,37 @@
     <nav class="navbar">
       <div class="nav-container">
         <%= link_to "Zineshare", root_path, class: "nav-brand" %>
-        <div class="nav-links">
-          <%= link_to "Browse Zines", root_path, class: "nav-link" %>
-          <%= link_to "Upload Zine", new_zine_path, class: "nav-link nav-link-primary" %>
 
-          <% if user_signed_in? %>
-            <div class="nav-user">
-              <span class="nav-user-email"><%= current_user.email %></span>
-              <%= link_to "Account", edit_user_registration_path, class: "nav-link" %>
-              <%= link_to "Sign Out", destroy_user_session_path, method: :delete, class: "nav-link" %>
-            </div>
-          <% else %>
-            <div class="nav-auth">
-              <%= link_to "Sign In", new_user_session_path, class: "nav-link" %>
-              <%= link_to "Sign Up", new_user_registration_path, class: "nav-link nav-link-secondary" %>
-            </div>
-          <% end %>
+        <!-- Mobile hamburger button -->
+        <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+
+        <!-- Navigation menu -->
+        <div class="nav-menu" id="nav-menu">
+          <div class="nav-links">
+            <%= link_to "Browse Zines", root_path, class: "nav-link" %>
+            <%= link_to "Upload Zine", new_zine_path, class: "nav-link nav-link-primary" %>
+
+            <% if user_signed_in? %>
+              <div class="nav-user">
+                <span class="nav-user-email"><%= current_user.email %></span>
+                <%= link_to "Dashboard", dashboard_path, class: "nav-link" %>
+                <% if current_user.admin? %>
+                  <%= link_to "Admin", admin_path, class: "nav-link nav-link-admin" %>
+                <% end %>
+                <%= link_to "Account", edit_user_registration_path, class: "nav-link" %>
+                <%= link_to "Sign Out", destroy_user_session_path, method: :delete, class: "nav-link" %>
+              </div>
+            <% else %>
+              <div class="nav-auth">
+                <%= link_to "Sign In", new_user_session_path, class: "nav-link" %>
+                <%= link_to "Sign Up", new_user_registration_path, class: "nav-link nav-link-secondary" %>
+              </div>
+            <% end %>
+          </div>
         </div>
       </div>
     </nav>

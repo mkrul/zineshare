@@ -1,0 +1,17 @@
+AdminNotification#new_zine_notification
+
+New Zine Uploaded to ZineShare
+====================================
+
+A new zine has been uploaded to ZineShare!
+
+Title: <%= @zine.title %>
+Creator: <%= @zine.created_by %>
+Category: <%= @zine.category.name %>
+Uploaded: <%= @zine.created_at.strftime("%B %d, %Y at %I:%M %p") %>
+<% if @zine.user %>User Email: <%= @zine.user.email %><% end %>
+
+View the zine: <%= @zine_url %>
+
+---
+This is an automated notification from ZineShare.
