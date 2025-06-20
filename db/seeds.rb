@@ -51,12 +51,11 @@ end
 puts "Created #{Category.count} categories"
 
 # Create admin user
-admin_email = Rails.application.credentials.admin_email || 'admin@zineshare.com'
+admin_email = Rails.application.credentials.admin_email
 admin_user = User.find_or_create_by(email: admin_email) do |user|
-  user.password = 'admin123456'
+  user.password = Rails.application.credentials.admin_password
   user.admin = true
 end
-
 if admin_user.persisted?
   puts "Admin user created with email: #{admin_user.email}"
 else
