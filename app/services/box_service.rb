@@ -6,18 +6,35 @@ class BoxService
   ZINES_FOLDER_NAME = 'Zineshare Uploads'
 
   def initialize
+    Rails.logger.info "=== BOX SERVICE INITIALIZATION START ==="
     @client = create_client
+    Rails.logger.info "Box client created successfully"
+    Rails.logger.info "=== BOX SERVICE INITIALIZATION END ==="
   end
 
   def upload_zine_file(file_path, filename)
+    Rails.logger.info "=== BOX SERVICE UPLOAD START ==="
+    Rails.logger.info "File path: #{file_path}"
+    Rails.logger.info "Filename: #{filename}"
+    Rails.logger.info "File exists?: #{File.exist?(file_path)}"
+    Rails.logger.info "File size: #{File.size(file_path)} bytes" if File.exist?(file_path)
+
     ensure_zines_folder_exists
 
     begin
+      Rails.logger.info "Initiating Box API upload"
       uploaded_file = @client.upload_file(file_path, @zines_folder_id, name: filename)
+      Rails.logger.info "Box API upload successful"
+      Rails.logger.info "Uploaded file ID: #{uploaded_file.id}"
+      Rails.logger.info "Uploaded file name: #{uploaded_file.name}"
+
       uploaded_file.id
     rescue => e
-      Rails.logger.error "Box upload failed: #{e.message}"
+      Rails.logger.error "Box upload failed: #{e.class} - #{e.message}"
+      Rails.logger.error "Box upload backtrace: #{e.backtrace.first(10).join('\n')}"
       raise BoxUploadError, "Failed to upload file to Box: #{e.message}"
+    ensure
+      Rails.logger.info "=== BOX SERVICE UPLOAD END ==="
     end
   end
 
@@ -52,42 +69,119 @@ class BoxService
   private
 
   def create_client
+    Rails.logger.info "Creating Box client with OAuth2 Client Credentials"
     begin
-      Boxr::Client.new(access_token)
+      access_token = obtain_access_token
+      client = Boxr::Client.new(access_token)
+      Rails.logger.info "Box client created successfully with OAuth2"
+      client
     rescue => e
-      Rails.logger.error "Box client creation failed: #{e.message}"
+      Rails.logger.error "Box client creation failed: #{e.class} - #{e.message}"
+      Rails.logger.error "Box client creation backtrace: #{e.backtrace.first(5).join('\n')}"
       raise BoxAuthenticationError, "Failed to authenticate with Box: #{e.message}"
     end
   end
 
-  def access_token
-    # In production, this should use JWT authentication or OAuth
-    # For now, we'll use a simple access token from credentials
-    Rails.application.credentials.box&.access_token ||
-      ENV['BOX_ACCESS_TOKEN'] ||
-      raise(BoxAuthenticationError, "Box access token not configured")
+  def obtain_access_token
+    Rails.logger.info "Obtaining Box access token via Client Credentials Grant"
+
+    client_id = Rails.application.credentials.box&.client_id || ENV['BOX_CLIENT_ID']
+    client_secret = Rails.application.credentials.box&.client_secret || ENV['BOX_CLIENT_SECRET']
+    enterprise_id = Rails.application.credentials.box&.enterprise_id || ENV['BOX_ENTERPRISE_ID']
+
+    unless client_id.present? && client_secret.present?
+      Rails.logger.error "Box client credentials not configured"
+      raise BoxAuthenticationError, "Box client_id and client_secret must be configured"
+    end
+
+    begin
+      require 'net/http'
+      require 'uri'
+      require 'json'
+
+      # Make direct HTTP request to Box OAuth2 token endpoint
+      uri = URI('https://api.box.com/oauth2/token')
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+
+      request = Net::HTTP::Post.new(uri)
+      request['Content-Type'] = 'application/x-www-form-urlencoded'
+
+      # Build request body for Client Credentials Grant
+      params = {
+        'grant_type' => 'client_credentials',
+        'client_id' => client_id,
+        'client_secret' => client_secret
+      }
+
+      # Only add subject parameters for Enterprise Access apps
+      if enterprise_id.present?
+        Rails.logger.info "Authenticating with Enterprise Access (enterprise_id: #{enterprise_id})"
+        params['box_subject_type'] = 'enterprise'
+        params['box_subject_id'] = enterprise_id
+      else
+        Rails.logger.info "Authenticating with App Access Only (no enterprise_id configured)"
+        # For App Access Only, we don't include box_subject_type or box_subject_id
+      end
+
+      request.body = URI.encode_www_form(params)
+      Rails.logger.info "Making OAuth2 token request to Box API"
+      Rails.logger.debug "Request params: #{params.except('client_secret')}" # Log without secret
+
+      response = http.request(request)
+
+      if response.code == '200'
+        token_data = JSON.parse(response.body)
+        Rails.logger.info "Successfully obtained Box access token via OAuth2"
+        token_data['access_token']
+      else
+        Rails.logger.error "Box OAuth2 token request failed: #{response.code} #{response.message}"
+        Rails.logger.error "Response body: #{response.body}"
+        raise BoxAuthenticationError, "Failed to obtain Box access token: #{response.code} #{response.message}"
+      end
+    rescue JSON::ParserError => e
+      Rails.logger.error "Failed to parse Box OAuth2 response: #{e.message}"
+      raise BoxAuthenticationError, "Invalid response from Box OAuth2 endpoint"
+    rescue => e
+      Rails.logger.error "Failed to obtain Box access token: #{e.class} - #{e.message}"
+      Rails.logger.error "OAuth2 authentication backtrace: #{e.backtrace.first(5).join('\n')}"
+      raise BoxAuthenticationError, "Failed to obtain Box access token via OAuth2: #{e.message}"
+    end
   end
 
   def ensure_zines_folder_exists
-    return if @zines_folder_id
+    Rails.logger.info "Ensuring zines folder exists"
+    return if @zines_folder_id.present?
 
+    Rails.logger.info "Searching for existing zines folder"
     begin
-      # Try to find existing folder
-      root_items = @client.folder_items(0, fields: [:name, :id])
-      existing_folder = root_items.find { |item| item.name == ZINES_FOLDER_NAME && item.type == 'folder' }
+      folders = @client.folder_items(0, fields: [:name])
+      Rails.logger.info "Found #{folders.count} items in root folder"
 
-      if existing_folder
-        @zines_folder_id = existing_folder.id
+      zines_folder = folders.find { |item| item.name == ZINES_FOLDER_NAME && item.type == 'folder' }
+
+      if zines_folder
+        Rails.logger.info "Found existing zines folder with ID: #{zines_folder.id}"
+        @zines_folder_id = zines_folder.id
       else
-        # Create new folder
-        new_folder = @client.create_folder(ZINES_FOLDER_NAME, 0)
-        @zines_folder_id = new_folder.id
+        Rails.logger.info "Creating new zines folder"
+        created_folder = @client.create_folder(ZINES_FOLDER_NAME, 0)
+        @zines_folder_id = created_folder.id
+        Rails.logger.info "Created zines folder with ID: #{@zines_folder_id}"
       end
-
-      Rails.logger.info "Using Box folder '#{ZINES_FOLDER_NAME}' with ID: #{@zines_folder_id}"
+    rescue Boxr::BoxrError => e
+      if e.message.include?("invalid_token")
+        Rails.logger.error "Box authentication failed - token expired or invalid"
+        raise BoxAuthenticationError, "Box access token expired or invalid. Please refresh the token."
+      else
+        Rails.logger.error "Failed to ensure zines folder exists: #{e.class} - #{e.message}"
+        Rails.logger.error "Zines folder creation backtrace: #{e.backtrace.first(5).join('\n')}"
+        raise BoxError, "Failed to create or find zines folder: #{e.message}"
+      end
     rescue => e
-      Rails.logger.error "Box folder creation/lookup failed: #{e.message}"
-      raise BoxError, "Failed to setup Box folder: #{e.message}"
+      Rails.logger.error "Failed to ensure zines folder exists: #{e.class} - #{e.message}"
+      Rails.logger.error "Zines folder creation backtrace: #{e.backtrace.first(5).join('\n')}"
+      raise BoxError, "Failed to create or find zines folder: #{e.message}"
     end
   end
 end

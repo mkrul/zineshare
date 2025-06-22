@@ -5,8 +5,12 @@ Rails.application.configure do
 
   # Validate Box configuration in production
   if Rails.env.production? && config.box_enabled
-    unless Rails.application.credentials.box&.access_token || ENV['BOX_ACCESS_TOKEN']
-      Rails.logger.warn "Box.com access token not configured. File uploads will fail."
+    client_id = Rails.application.credentials.box&.client_id || ENV['BOX_CLIENT_ID']
+    client_secret = Rails.application.credentials.box&.client_secret || ENV['BOX_CLIENT_SECRET']
+
+    unless client_id.present? && client_secret.present?
+      Rails.logger.warn "Box.com OAuth2 credentials not configured. File uploads will fail."
+      Rails.logger.warn "Required: box.client_id and box.client_secret in Rails credentials"
     end
   end
 end

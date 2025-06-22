@@ -27,10 +27,21 @@ class ZinesControllerTest < ActionDispatch::IntegrationTest
   end
 
   def test_index_should_show_all_zines
+    # Create a pending zine
+    pending_zine = Zine.create!(
+      title: "Pending Zine",
+      created_by: "Pending Creator",
+      category: @category,
+      user: @user,
+      pending_moderation: true
+    )
+
     get zines_url
     assert_response :success
-    assert_match @zine.created_by, response.body
-    assert_match @other_zine.created_by, response.body
+
+    # Should show all zines regardless of moderation status
+    assert_match @zine.title, response.body
+    assert_match pending_zine.title, response.body
   end
 
   def test_index_should_filter_by_category

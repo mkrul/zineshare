@@ -150,12 +150,13 @@ class AdminControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='#{admin_path}']", count: 0
   end
 
-  def test_pending_zines_should_not_appear_in_public_index
+  def test_all_zines_should_appear_in_public_index
     get zines_path
     assert_response :success
 
+    # All zines should now appear in public listings
     assert_match @approved_zine.title, response.body
-    assert_no_match @pending_zine.title, response.body
+    assert_match @pending_zine.title, response.body
   end
 
   private

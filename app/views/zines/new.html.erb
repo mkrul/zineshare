@@ -36,17 +36,16 @@
           { class: "form-control form-select" } %>
     </div>
 
-    <div class="form-group">
-      <%= form.label :pdf_file, "PDF File", class: "form-label" %>
-      <div class="file-upload">
-        <%= form.file_field :pdf_file,
-            accept: ".pdf",
-            class: "form-control",
-            data: {
-              target: "file-upload.input",
-              action: "change->file-upload#handleFileSelect"
-            } %>
-        <label for="<%= form.field_id(:pdf_file) %>" class="file-upload-label">
+    <div class="field">
+      <%= form.label :pdf_file, "PDF File", class: "field-label" %>
+      <div class="file-upload-area">
+        <label for="zine_pdf_file" class="file-upload-label">
+          <%= form.file_field :pdf_file,
+                              accept: "application/pdf",
+                              required: true,
+                              class: "file-input",
+                              id: "zine_pdf_file",
+                              onchange: "updateFileDisplay(this)" %>
           <div class="file-upload-text">
             <strong>Choose PDF file</strong> or drag it here
             <br>
@@ -54,42 +53,194 @@
           </div>
         </label>
       </div>
-      <small class="form-text text-muted">
-        Your PDF will be processed to remove metadata and validated for the correct dimensions and file size.
-      </small>
+
+      <!-- Simple file display -->
+      <div id="file-display" class="file-display" style="display: none;">
+        <div class="file-info">
+          <span class="file-icon">📄</span>
+          <span id="file-name"></span>
+          <button type="button" onclick="clearFile(event)" class="remove-btn">✕</button>
+        </div>
+      </div>
     </div>
 
+    <small class="form-text text-muted">
+      Your PDF will be processed to remove metadata and validated for the correct dimensions and file size.
+    </small>
+
     <div class="form-actions">
-      <%= form.submit "Upload Zine", class: "btn btn-primary" %>
-      <%= link_to "Cancel", root_path, class: "btn btn-secondary" %>
+      <%= form.submit "Upload Zine", class: "btn btn-primary", id: "upload-btn" %>
+      <%= link_to "Cancel", root_path, class: "btn btn-secondary", id: "cancel-btn" %>
     </div>
   <% end %>
 </div>
 
+
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+// Simple file display functions
+function updateFileDisplay(input) {
+  const fileDisplay = document.getElementById('file-display');
+  const fileName = document.getElementById('file-name');
+
+  if (input.files && input.files.length > 0) {
+    const file = input.files[0];
+    if (fileDisplay && fileName) {
+      fileName.textContent = file.name;
+      fileDisplay.style.display = 'block';
+    }
+  } else {
+    if (fileDisplay) {
+      fileDisplay.style.display = 'none';
+    }
+  }
+}
+
+function clearFile(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
   const fileInput = document.querySelector('input[type="file"]');
+  const fileDisplay = document.getElementById('file-display');
   const fileLabel = document.querySelector('.file-upload-label');
 
-  if (fileInput && fileLabel) {
-    fileInput.addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (file) {
-        fileLabel.classList.add('has-file');
-        fileLabel.querySelector('.file-upload-text').innerHTML = `
-          <strong>Selected: ${file.name}</strong>
+  if (fileInput) {
+    fileInput.value = '';
+  }
+
+  if (fileDisplay) {
+    fileDisplay.style.display = 'none';
+  }
+
+  if (fileLabel) {
+    fileLabel.classList.remove('has-file');
+    const uploadText = fileLabel.querySelector('.file-upload-text');
+    if (uploadText) {
+      uploadText.innerHTML = `
+        <strong>Choose PDF file</strong> or drag it here
+        <br>
+        <small>Must be exactly 1224×1584 pixels, max 10MB</small>
+      `;
+    }
+  }
+}
+
+// Main JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+
+  const fileInput = document.querySelector('input[type="file"]');
+  const fileLabel = document.querySelector('.file-upload-label');
+  const form = document.querySelector('form');
+
+  if (!fileInput || !fileLabel) {
+    return;
+  }
+
+  // File selection via click
+  fileInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+      // Update the upload label
+      fileLabel.classList.add('has-file');
+      const uploadText = fileLabel.querySelector('.file-upload-text');
+      if (uploadText) {
+        uploadText.innerHTML = `
+          <strong>✓ File Selected</strong>
           <br>
-          <small>Size: ${(file.size / 1024 / 1024).toFixed(2)} MB</small>
-        `;
-      } else {
-        fileLabel.classList.remove('has-file');
-        fileLabel.querySelector('.file-upload-text').innerHTML = `
-          <strong>Choose PDF file</strong> or drag it here
-          <br>
-          <small>Must be exactly 1224×1584 pixels</small>
+          <small>Click to change or see below</small>
         `;
       }
+    } else {
+      // Reset label if no file
+      fileLabel.classList.remove('has-file');
+      const uploadText = fileLabel.querySelector('.file-upload-text');
+      if (uploadText) {
+        uploadText.innerHTML = `
+          <strong>Choose PDF file</strong> or drag it here
+          <br>
+          <small>Must be exactly 1224×1584 pixels, max 10MB</small>
+        `;
+      }
+    }
+  });
+
+  // Drag and drop functionality
+  fileLabel.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    fileLabel.classList.add('drag-over');
+  });
+
+  fileLabel.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    fileLabel.classList.remove('drag-over');
+  });
+
+  fileLabel.addEventListener('drop', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    fileLabel.classList.remove('drag-over');
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      fileInput.files = files;
+      // Trigger change event
+      const changeEvent = new Event('change', { bubbles: true });
+      fileInput.dispatchEvent(changeEvent);
+    }
+  });
+
+  // Form submission
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      const fileInput = form.querySelector('input[type="file"]');
+
+      if (!fileInput || !fileInput.files.length) {
+        e.preventDefault();
+        alert('Please select a PDF file before uploading.');
+        return false;
+      }
+
+      // Validate required fields
+      const title = form.querySelector('input[name="zine[title]"]');
+      const createdBy = form.querySelector('input[name="zine[created_by]"]');
+      const category = form.querySelector('select[name="zine[category_id]"]');
+
+      if (!title || !title.value.trim()) {
+        e.preventDefault();
+        alert('Please enter a title for your zine.');
+        return false;
+      }
+
+      if (!createdBy || !createdBy.value.trim()) {
+        e.preventDefault();
+        alert('Please enter who created this zine.');
+        return false;
+      }
+
+      if (!category || !category.value) {
+        e.preventDefault();
+        alert('Please select a category for your zine.');
+        return false;
+      }
+
+      // Show button spinner
+      showButtonSpinner();
     });
   }
 });
+
+// Button spinner function
+function showButtonSpinner() {
+  const uploadBtn = document.getElementById('upload-btn');
+
+  if (uploadBtn) {
+    uploadBtn.disabled = true;
+    uploadBtn.classList.add('btn-disabled');
+    uploadBtn.innerHTML = '<span class="btn-spinner"></span>Uploading...';
+  }
+}
 </script>
