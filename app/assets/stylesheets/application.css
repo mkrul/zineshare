@@ -987,37 +987,56 @@ body {
   margin-bottom: 2rem;
 }
 
-.zine-actions {
-  margin-top: 1rem;
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.pdf-viewer {
-  background: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  padding: 1rem;
+/* Thumbnail Preview Section */
+.zine-preview {
+  text-align: center;
   margin-bottom: 2rem;
 }
 
-.pdf-controls {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  justify-content: center;
-}
-
-.pdf-embed {
-  border: 1px solid #dee2e6;
-  border-radius: 0.25rem;
+.thumbnail-container {
+  position: relative;
+  display: inline-block;
+  max-width: 400px;
+  margin-bottom: 1.5rem;
+  border-radius: 0.5rem;
   overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-.pdf-embed iframe {
-  border: none;
+.zine-thumbnail-large {
+  width: 100%;
+  height: auto;
   display: block;
+  border-radius: 0.5rem;
+}
+
+.preview-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.thumbnail-container:hover .preview-overlay {
+  opacity: 1;
+}
+
+.preview-overlay .btn {
+  font-size: 1.1rem;
+  padding: 0.75rem 1.5rem;
+  transform: translateY(10px);
+  transition: transform 0.3s ease;
+}
+
+.thumbnail-container:hover .preview-overlay .btn {
+  transform: translateY(0);
 }
 
 .zine-actions {
@@ -1384,7 +1403,8 @@ body {
 
 /* Form disabled states */
 .form-control:disabled,
-.form-select:disabled {
+.form-select:disabled,
+.form-control-disabled {
   background-color: #f8f9fa;
   opacity: 0.6;
   cursor: not-allowed;
@@ -1529,6 +1549,38 @@ body.modal-open {
   .modal-footer .btn {
     width: 100%;
   }
+}
+
+/* PDF Viewer Section */
+.pdf-viewer {
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  padding: 1rem;
+  margin-bottom: 2rem;
+}
+
+.pdf-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.viewer-controls {
+  margin-bottom: 1rem;
+}
+
+.pdf-embed {
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.pdf-embed iframe {
+  border: none;
+  display: block;
 }
 
 

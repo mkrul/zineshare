@@ -5,24 +5,9 @@
   </div>
 </div>
 
-<div class="dashboard-stats">
-  <div class="stat-card">
-    <h3><%= current_user.zines.count %></h3>
-    <p>Total Zines Uploaded</p>
-  </div>
-  <div class="stat-card">
-    <h3><%= @zines.count %></h3>
-    <p>Showing This Page</p>
-  </div>
-</div>
-
 <div class="dashboard-actions">
   <%= link_to "Upload New Zine", new_zine_path, class: "btn btn-primary" %>
   <%= link_to "Browse All Zines", root_path, class: "btn btn-secondary" %>
-</div>
-
-<div id="flash_messages">
-  <%= render "shared/flash", notice: notice, alert: alert %>
 </div>
 
 <div class="user-zines" data-controller="delete-confirmation">

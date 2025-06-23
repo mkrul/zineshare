@@ -41,8 +41,30 @@ class ZinesController < ApplicationController
   def create
     Rails.logger.info "=== ZINE UPLOAD START ==="
     Rails.logger.info "User: #{current_user.id} (#{current_user.email})"
+    Rails.logger.info "Request format: #{request.format}"
+    Rails.logger.info "Request headers: #{request.headers.to_h.select { |k, v| k.start_with?('HTTP_') || k == 'CONTENT_TYPE' }}"
     Rails.logger.info "Params received: #{params.inspect}"
-    Rails.logger.info "Zine params: #{zine_params.inspect}"
+
+    # Check if zine params exist before calling zine_params
+    if params[:zine].present?
+      Rails.logger.info "Zine params: #{zine_params.inspect}"
+    else
+      Rails.logger.error "No zine parameter found in params!"
+      Rails.logger.info "Available param keys: #{params.keys}"
+
+      @zine = Zine.new
+      @categories = Category.all.order(:name)
+
+      flash.now[:alert] = 'Form data was not received properly. Please try again.'
+
+      respond_to do |format|
+        format.html { render :new, status: :unprocessable_entity }
+        format.turbo_stream {
+          render turbo_stream: turbo_stream.replace("zine-form", partial: "zines/form", locals: { zine: @zine, categories: @categories })
+        }
+      end
+      return
+    end
 
     # Log file upload details
     if params[:zine] && params[:zine][:pdf_file]
@@ -69,7 +91,13 @@ class ZinesController < ApplicationController
       if Rails.env.production? && @zine.file_id.blank?
         Rails.logger.error "Dropbox upload failed - no file_id present"
         flash[:alert] = 'Zine was uploaded but there was an issue with remote storage. Please try again or contact support.'
-        render :new, status: :unprocessable_entity
+
+        respond_to do |format|
+          format.html { render :new, status: :unprocessable_entity }
+          format.turbo_stream {
+            render turbo_stream: turbo_stream.replace("zine-form", partial: "zines/form", locals: { zine: @zine, categories: @categories })
+          }
+        end
       else
         success_message = if Rails.env.test?
           'Zine was successfully uploaded.'
@@ -77,12 +105,19 @@ class ZinesController < ApplicationController
           'Zine was successfully uploaded to secure storage.'
         end
         Rails.logger.info "Zine upload completed successfully"
+
         redirect_to @zine, notice: success_message
       end
     else
       Rails.logger.error "Zine save failed with errors: #{@zine.errors.full_messages.join(', ')}"
       Rails.logger.error "Validation errors: #{@zine.errors.details.inspect}"
-      render :new, status: :unprocessable_entity
+
+      respond_to do |format|
+        format.html { render :new, status: :unprocessable_entity }
+        format.turbo_stream {
+          render turbo_stream: turbo_stream.replace("zine-form", partial: "zines/form", locals: { zine: @zine, categories: @categories })
+        }
+      end
     end
 
     Rails.logger.info "=== ZINE UPLOAD END ==="

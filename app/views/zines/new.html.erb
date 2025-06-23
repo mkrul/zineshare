@@ -6,73 +6,7 @@
 </div>
 
 <div class="form-container">
-  <% if @zine.errors.any? %>
-    <div class="error-messages">
-      <h4><%= pluralize(@zine.errors.count, "error") %> prohibited this zine from being saved:</h4>
-      <ul>
-        <% @zine.errors.full_messages.each do |message| %>
-          <li><%= message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
-  <%= form_with model: @zine, local: true, multipart: true do |form| %>
-    <div class="form-group">
-      <%= form.label :title, "Title", class: "form-label" %>
-      <%= form.text_field :title, class: "form-control", placeholder: "Enter the zine title" %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :created_by, "Created by", class: "form-label" %>
-      <%= form.text_field :created_by, class: "form-control", placeholder: "Your name or handle" %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :category_id, "Category", class: "form-label" %>
-      <%= form.select :category_id,
-          options_from_collection_for_select(@categories, :id, :name, @zine.category_id),
-          { prompt: "Select a category" },
-          { class: "form-control form-select" } %>
-    </div>
-
-    <div class="field">
-      <%= form.label :pdf_file, "PDF File", class: "field-label" %>
-      <div class="file-upload-area">
-        <label for="zine_pdf_file" class="file-upload-label">
-          <%= form.file_field :pdf_file,
-                              accept: "application/pdf",
-                              required: true,
-                              class: "file-input",
-                              id: "zine_pdf_file",
-                              onchange: "updateFileDisplay(this)" %>
-          <div class="file-upload-text">
-            <strong>Choose PDF file</strong> or drag it here
-            <br>
-            <small>Must be exactly 1224×1584 pixels, max 10MB</small>
-          </div>
-        </label>
-      </div>
-
-      <!-- Simple file display -->
-      <div id="file-display" class="file-display" style="display: none;">
-        <div class="file-info">
-          <span class="file-icon">📄</span>
-          <span id="file-name"></span>
-          <button type="button" onclick="clearFile(event)" class="remove-btn">✕</button>
-        </div>
-      </div>
-    </div>
-
-    <small class="form-text text-muted">
-      Your PDF will be processed to remove metadata and validated for the correct dimensions and file size.
-    </small>
-
-    <div class="form-actions">
-      <%= form.submit "Upload Zine", class: "btn btn-primary", id: "upload-btn" %>
-      <%= link_to "Cancel", root_path, class: "btn btn-secondary", id: "cancel-btn" %>
-    </div>
-  <% end %>
+  <%= render "form", zine: @zine, categories: @categories %>
 </div>
 
 
@@ -193,54 +127,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Form submission
-  if (form) {
-    form.addEventListener('submit', function(e) {
-      const fileInput = form.querySelector('input[type="file"]');
-
-      if (!fileInput || !fileInput.files.length) {
-        e.preventDefault();
-        alert('Please select a PDF file before uploading.');
-        return false;
-      }
-
-      // Validate required fields
-      const title = form.querySelector('input[name="zine[title]"]');
-      const createdBy = form.querySelector('input[name="zine[created_by]"]');
-      const category = form.querySelector('select[name="zine[category_id]"]');
-
-      if (!title || !title.value.trim()) {
-        e.preventDefault();
-        alert('Please enter a title for your zine.');
-        return false;
-      }
-
-      if (!createdBy || !createdBy.value.trim()) {
-        e.preventDefault();
-        alert('Please enter who created this zine.');
-        return false;
-      }
-
-      if (!category || !category.value) {
-        e.preventDefault();
-        alert('Please select a category for your zine.');
-        return false;
-      }
-
-      // Show button spinner
-      showButtonSpinner();
-    });
-  }
+  // Form submission is now handled by Stimulus upload-form controller
 });
-
-// Button spinner function
-function showButtonSpinner() {
-  const uploadBtn = document.getElementById('upload-btn');
-
-  if (uploadBtn) {
-    uploadBtn.disabled = true;
-    uploadBtn.classList.add('btn-disabled');
-    uploadBtn.innerHTML = '<span class="btn-spinner"></span>Uploading...';
-  }
-}
 </script>

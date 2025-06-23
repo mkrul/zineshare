@@ -54,30 +54,52 @@
 
 <div class="zine-content">
   <% if @zine.file_available? %>
-    <div class="pdf-viewer">
+    <!-- Thumbnail Preview Section -->
+    <div class="zine-preview">
+      <div class="thumbnail-container">
+        <img src="<%= @zine.thumbnail_url %>"
+             alt="<%= @zine.title %> preview"
+             class="zine-thumbnail-large"
+             loading="lazy">
+        <div class="preview-overlay">
+          <button class="btn btn-primary" onclick="showPDFViewer()">
+            📖 View Full PDF
+          </button>
+        </div>
+      </div>
+
       <div class="pdf-controls">
         <% if Rails.env.test? && @zine.pdf_file.attached? %>
-          <%= link_to "Download PDF", rails_blob_path(@zine.pdf_file, disposition: "attachment"),
-              class: "btn btn-primary", target: "_blank" %>
-          <%= link_to "View PDF", rails_blob_path(@zine.pdf_file, disposition: "inline"),
+          <%= link_to "📄 Download PDF", rails_blob_path(@zine.pdf_file, disposition: "attachment"),
               class: "btn btn-secondary", target: "_blank" %>
+          <%= link_to "🔗 Open in New Tab", rails_blob_path(@zine.pdf_file, disposition: "inline"),
+              class: "btn btn-outline", target: "_blank" %>
         <% elsif Rails.env.development? && @zine.pdf_file.attached? %>
-          <%= link_to "Download PDF", rails_blob_path(@zine.pdf_file, disposition: "attachment"),
-              class: "btn btn-primary", target: "_blank" %>
-          <%= link_to "View PDF", rails_blob_path(@zine.pdf_file, disposition: "inline"),
+          <%= link_to "📄 Download PDF", rails_blob_path(@zine.pdf_file, disposition: "attachment"),
               class: "btn btn-secondary", target: "_blank" %>
+          <%= link_to "🔗 Open in New Tab", rails_blob_path(@zine.pdf_file, disposition: "inline"),
+              class: "btn btn-outline", target: "_blank" %>
         <% elsif @zine.file_id.present? %>
           <% if @zine.dropbox_download_url %>
-            <%= link_to "Download PDF", @zine.dropbox_download_url,
-                class: "btn btn-primary", target: "_blank" %>
-            <%= link_to "View PDF", @zine.dropbox_download_url,
+            <%= link_to "📄 Download PDF", @zine.dropbox_download_url,
                 class: "btn btn-secondary", target: "_blank" %>
+            <%= link_to "🔗 Open in New Tab", @zine.dropbox_download_url,
+                class: "btn btn-outline", target: "_blank" %>
           <% else %>
             <div class="alert alert-error">
               <p>PDF download temporarily unavailable. Please try again later.</p>
             </div>
           <% end %>
         <% end %>
+      </div>
+    </div>
+
+    <!-- PDF Viewer Section (Hidden by default) -->
+    <div class="pdf-viewer" id="pdf-viewer-container" style="display: none;">
+      <div class="viewer-controls">
+        <button class="btn btn-outline" onclick="hidePDFViewer()">
+          ← Back to Preview
+        </button>
       </div>
 
       <% if Rails.env.test? && @zine.pdf_file.attached? %>
@@ -126,6 +148,18 @@
 <div class="zine-actions">
   <%= link_to "← Back to All Zines", root_path, class: "btn btn-secondary" %>
 </div>
+
+<script>
+function showPDFViewer() {
+  document.querySelector('.zine-preview').style.display = 'none';
+  document.getElementById('pdf-viewer-container').style.display = 'block';
+}
+
+function hidePDFViewer() {
+  document.querySelector('.zine-preview').style.display = 'block';
+  document.getElementById('pdf-viewer-container').style.display = 'none';
+}
+</script>
 
 
 

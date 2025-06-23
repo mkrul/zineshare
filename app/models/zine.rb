@@ -7,6 +7,7 @@ class Zine < ApplicationRecord
 
   validates :title, presence: true, length: { maximum: 100 }
   validates :created_by, presence: true
+  validates :category, presence: true
   validates :pdf_file, presence: true, unless: -> { Rails.env.test? }
   validate :pdf_file_must_be_pdf, unless: -> { Rails.env.test? }
   validate :pdf_file_size_within_limit, unless: -> { Rails.env.test? }

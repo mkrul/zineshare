@@ -51,40 +51,32 @@ export default class extends Controller {
       return
     }
 
+    // Create a form and submit it using Turbo
+    const form = document.createElement('form')
+    form.method = 'POST'
+    form.action = this.actionValue
+    form.style.display = 'none'
 
-
-    // Use Turbo's fetch method for seamless deletion
+    // Add CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
+    if (csrfToken) {
+      const csrfInput = document.createElement('input')
+      csrfInput.type = 'hidden'
+      csrfInput.name = 'authenticity_token'
+      csrfInput.value = csrfToken
+      form.appendChild(csrfInput)
+    }
 
-    fetch(this.actionValue, {
-      method: 'DELETE',
-      headers: {
-        'Accept': 'text/vnd.turbo-stream.html',
-        'X-CSRF-Token': csrfToken,
-        'X-Requested-With': 'XMLHttpRequest'
-      },
-      credentials: 'same-origin'
-    }).then(response => {
-      if (response.ok) {
-        return response.text()
-      } else {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-    }).then(html => {
-      // Let Turbo handle the stream response
-      Turbo.renderStreamMessage(html)
-    }).catch(error => {
-      console.error('Delete request failed:', error)
-      // Show error message
-      const flashContainer = document.getElementById('flash_messages')
-      if (flashContainer) {
-        flashContainer.innerHTML = `
-          <div class="alert alert-error">
-            Failed to delete zine. Please try again.
-          </div>
-        `
-      }
-    })
+    // Add method override for DELETE
+    const methodInput = document.createElement('input')
+    methodInput.type = 'hidden'
+    methodInput.name = '_method'
+    methodInput.value = 'DELETE'
+    form.appendChild(methodInput)
+
+    // Append form to body and submit
+    document.body.appendChild(form)
+    form.submit()
 
     this.close()
   }
