@@ -65,9 +65,9 @@ class ZinesController < ApplicationController
       Rails.logger.info "Zine saved successfully with ID: #{@zine.id}"
       Rails.logger.info "PDF file attached after save?: #{@zine.pdf_file.attached?}"
 
-      # Check if Box upload was successful (in production)
-      if Rails.env.production? && @zine.box_file_id.blank?
-        Rails.logger.error "Box upload failed - no box_file_id present"
+      # Check if Dropbox upload was successful (in production)
+      if Rails.env.production? && @zine.file_id.blank?
+        Rails.logger.error "Dropbox upload failed - no file_id present"
         flash[:alert] = 'Zine was uploaded but there was an issue with remote storage. Please try again or contact support.'
         render :new, status: :unprocessable_entity
       else
@@ -92,23 +92,23 @@ class ZinesController < ApplicationController
   end
 
   def update
-    old_box_file_id = @zine.box_file_id
+    old_file_id = @zine.file_id
     pdf_was_replaced = zine_params[:pdf_file].present?
 
     if @zine.update(zine_params)
       if pdf_was_replaced
-        # Delete old file from Box if it exists
-        if old_box_file_id.present?
+        # Delete old file from Dropbox if it exists
+        if old_file_id.present?
           begin
-            @zine.send(:box_service).delete_file(old_box_file_id)
-            Rails.logger.info "Deleted old Box file #{old_box_file_id} for zine #{@zine.id}"
+            @zine.send(:dropbox_service).delete_file(old_file_id)
+            Rails.logger.info "Deleted old Dropbox file #{old_file_id} for zine #{@zine.id}"
           rescue => e
-            Rails.logger.error "Failed to delete old Box file: #{e.message}"
+            Rails.logger.error "Failed to delete old Dropbox file: #{e.message}"
           end
         end
 
         # Trigger new upload and thumbnail generation
-        @zine.send(:upload_to_box) unless Rails.env.test?
+        @zine.send(:upload_to_dropbox) unless Rails.env.test?
         @zine.send(:generate_thumbnail)
       end
 
@@ -124,7 +124,7 @@ class ZinesController < ApplicationController
     Rails.logger.info "Zine ID: #{@zine.id}"
     Rails.logger.info "Zine title: #{@zine.title}"
     Rails.logger.info "PDF file attached?: #{@zine.pdf_file.attached?}"
-    Rails.logger.info "Box file ID: #{@zine.box_file_id}"
+    Rails.logger.info "Dropbox file ID: #{@zine.file_id}"
     Rails.logger.info "Zine owner: #{@zine.user_id}"
     Rails.logger.info "Current user: #{current_user.id}"
     Rails.logger.info "User authorized?: #{current_user == @zine.user}"

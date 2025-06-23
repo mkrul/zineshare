@@ -114,29 +114,36 @@ class BoxService
         'client_secret' => client_secret
       }
 
-      # Only add subject parameters for Enterprise Access apps
-      if enterprise_id.present?
-        Rails.logger.info "Authenticating with Enterprise Access (enterprise_id: #{enterprise_id})"
-        params['box_subject_type'] = 'enterprise'
-        params['box_subject_id'] = enterprise_id
-      else
-        Rails.logger.info "Authenticating with App Access Only (no enterprise_id configured)"
-        # For App Access Only, we don't include box_subject_type or box_subject_id
-      end
+      # For App Access Only authentication, we don't need subject parameters
+      Rails.logger.info "Authenticating with App Access Only"
+      Rails.logger.info "Client ID: #{client_id}"
+      Rails.logger.info "App will authenticate as its Service Account"
 
       request.body = URI.encode_www_form(params)
       Rails.logger.info "Making OAuth2 token request to Box API"
       Rails.logger.debug "Request params: #{params.except('client_secret')}" # Log without secret
+      Rails.logger.debug "Request body: #{request.body.gsub(client_secret, '[REDACTED]')}" # Log actual body
 
       response = http.request(request)
 
       if response.code == '200'
         token_data = JSON.parse(response.body)
         Rails.logger.info "Successfully obtained Box access token via OAuth2"
+        Rails.logger.info "Token expires in: #{token_data['expires_in']} seconds" if token_data['expires_in']
         token_data['access_token']
       else
         Rails.logger.error "Box OAuth2 token request failed: #{response.code} #{response.message}"
         Rails.logger.error "Response body: #{response.body}"
+
+        # Parse error response for more details
+        begin
+          error_data = JSON.parse(response.body)
+          Rails.logger.error "Box error: #{error_data['error']}"
+          Rails.logger.error "Box error description: #{error_data['error_description']}"
+        rescue
+          # If response isn't JSON, that's fine
+        end
+
         raise BoxAuthenticationError, "Failed to obtain Box access token: #{response.code} #{response.message}"
       end
     rescue JSON::ParserError => e

@@ -66,11 +66,11 @@
               class: "btn btn-primary", target: "_blank" %>
           <%= link_to "View PDF", rails_blob_path(@zine.pdf_file, disposition: "inline"),
               class: "btn btn-secondary", target: "_blank" %>
-        <% elsif @zine.box_file_id.present? %>
-          <% if @zine.box_download_url %>
-            <%= link_to "Download PDF", @zine.box_download_url,
+        <% elsif @zine.file_id.present? %>
+          <% if @zine.dropbox_download_url %>
+            <%= link_to "Download PDF", @zine.dropbox_download_url,
                 class: "btn btn-primary", target: "_blank" %>
-            <%= link_to "View PDF", @zine.box_download_url,
+            <%= link_to "View PDF", @zine.dropbox_download_url,
                 class: "btn btn-secondary", target: "_blank" %>
           <% else %>
             <div class="alert alert-error">
@@ -100,14 +100,14 @@
                <%= link_to "Download the PDF", rails_blob_path(@zine.pdf_file, disposition: "attachment") %> instead.</p>
           </iframe>
         </div>
-      <% elsif @zine.box_download_url %>
+      <% elsif @zine.dropbox_download_url %>
         <div class="pdf-embed">
-          <iframe src="<%= @zine.box_download_url %>"
+          <iframe src="<%= @zine.dropbox_download_url %>"
                   width="100%"
                   height="800px"
                   type="application/pdf">
             <p>Your browser doesn't support PDF viewing.
-               <%= link_to "Download the PDF", @zine.box_download_url %> instead.</p>
+               <%= link_to "Download the PDF", @zine.dropbox_download_url %> instead.</p>
           </iframe>
         </div>
       <% else %>

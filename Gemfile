@@ -47,8 +47,8 @@ gem "mini_magick", "~> 4.12"
 gem "pdf-reader", "~> 2.11"
 gem "prawn", "~> 2.4"
 
-# Box.com API integration for remote file storage
-gem "boxr", "~> 1.21"
+# Dropbox API integration for remote file storage
+gem "dropbox_api", "~> 0.1.21"
 
 # Pagination for infinite scrolling
 gem "pagy", "~> 8.0"

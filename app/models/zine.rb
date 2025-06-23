@@ -17,11 +17,11 @@ class Zine < ApplicationRecord
   scope :pending_moderation, -> { where(pending_moderation: true) }
 
   after_create :notify_admin, unless: -> { Rails.env.test? }
-  after_commit :upload_to_box_after_save, on: :create, if: -> { pdf_file.attached? && !Rails.env.test? }
+  after_commit :upload_to_dropbox_after_save, on: :create, if: -> { pdf_file.attached? && !Rails.env.test? }
   after_commit :generate_thumbnail_after_save, on: :create, if: -> { pdf_file.attached? }
   after_commit :validate_pdf_dimensions_after_save, on: :create, if: -> { pdf_file.attached? && !Rails.env.test? }
   before_destroy :cleanup_attachments
-  before_destroy :delete_from_box
+  before_destroy :delete_from_dropbox
 
   def approved?
     !pending_moderation?
@@ -35,13 +35,13 @@ class Zine < ApplicationRecord
     destroy
   end
 
-  def box_download_url
-    return nil unless box_file_id.present?
+  def dropbox_download_url
+    return nil unless file_id.present?
 
     begin
-      box_service.get_file_download_url(box_file_id)
-    rescue BoxService::BoxError => e
-      Rails.logger.error "Failed to get Box download URL for zine #{id}: #{e.message}"
+      dropbox_service.get_file_download_url(file_id)
+    rescue DropboxService::DropboxError => e
+      Rails.logger.error "Failed to get Dropbox download URL for zine #{id}: #{e.message}"
       nil
     end
   end
@@ -50,12 +50,12 @@ class Zine < ApplicationRecord
     if Rails.env.test?
       pdf_file.attached?
     elsif Rails.env.development?
-      # In development, check both Box and Active Storage
-      # This allows viewing files before/during Box upload
-      (box_file_id.present? && box_service.file_exists?(box_file_id)) || pdf_file.attached?
+      # In development, check both Dropbox and Active Storage
+      # This allows viewing files before/during Dropbox upload
+      (file_id.present? && dropbox_service.file_exists?(file_id)) || pdf_file.attached?
     else
-      # In production, only check Box
-      box_file_id.present? && box_service.file_exists?(box_file_id)
+      # In production, only check Dropbox
+      file_id.present? && dropbox_service.file_exists?(file_id)
     end
   end
 
@@ -248,97 +248,97 @@ class Zine < ApplicationRecord
     Rails.logger.info "=== THUMBNAIL GENERATION END ==="
   end
 
-  def upload_to_box
-    Rails.logger.info "=== BOX UPLOAD START ==="
+  def upload_to_dropbox
+    Rails.logger.info "=== DROPBOX UPLOAD START ==="
     Rails.logger.info "PDF file attached?: #{pdf_file.attached?}"
     Rails.logger.info "Rails environment: #{Rails.env}"
 
     return unless pdf_file.attached?
 
     begin
-      Rails.logger.info "Opening PDF file for Box upload"
+      Rails.logger.info "Opening PDF file for Dropbox upload"
       # Create a temporary file from the uploaded PDF
       pdf_file.blob.open do |temp_file|
-        Rails.logger.info "PDF file opened for Box upload at path: #{temp_file.path}"
+        Rails.logger.info "PDF file opened for Dropbox upload at path: #{temp_file.path}"
         Rails.logger.info "Temp file size: #{File.size(temp_file.path)} bytes"
 
-        filename = generate_box_filename
-        Rails.logger.info "Generated Box filename: #{filename}"
+        filename = generate_dropbox_filename
+        Rails.logger.info "Generated Dropbox filename: #{filename}"
 
-        # Upload to Box and get the file ID
-        Rails.logger.info "Initiating Box upload"
-        file_id = box_service.upload_zine_file(temp_file.path, filename)
-        Rails.logger.info "Box upload completed with file ID: #{file_id}"
+        # Upload to Dropbox and get the file ID
+        Rails.logger.info "Initiating Dropbox upload"
+        file_id = dropbox_service.upload_zine_file(temp_file.path, filename)
+        Rails.logger.info "Dropbox upload completed with file ID: #{file_id}"
 
-        # Store the Box file ID
-        update_column(:box_file_id, file_id)
-        Rails.logger.info "Box file ID stored in database"
+        # Store the Dropbox file ID
+        update_column(:file_id, file_id)
+        Rails.logger.info "Dropbox file ID stored in database"
 
         # Remove the local Active Storage attachment to save space
         Rails.logger.info "Purging local Active Storage attachment"
         pdf_file.purge
         Rails.logger.info "Local attachment purged"
 
-        Rails.logger.info "Successfully uploaded zine #{id} to Box with file ID: #{file_id}"
+        Rails.logger.info "Successfully uploaded zine #{id} to Dropbox with file ID: #{file_id}"
       end
-    rescue BoxService::BoxAuthenticationError => e
-      Rails.logger.error "Box authentication failed for zine #{id}: #{e.message}"
-      Rails.logger.error "Box upload backtrace: #{e.backtrace.first(5).join('\n')}"
-      Rails.logger.info "Zine #{id} saved locally - Box token needs to be refreshed"
+    rescue DropboxService::DropboxAuthenticationError => e
+      Rails.logger.error "Dropbox authentication failed for zine #{id}: #{e.message}"
+      Rails.logger.error "Dropbox upload backtrace: #{e.backtrace.first(5).join('\n')}"
+      Rails.logger.info "Zine #{id} saved locally - Dropbox token needs to be refreshed"
       # Don't raise the error to avoid breaking the save process
       # The file will remain in local storage as fallback
-    rescue BoxService::BoxError => e
-      Rails.logger.error "Failed to upload zine #{id} to Box: #{e.class} - #{e.message}"
-      Rails.logger.error "Box upload backtrace: #{e.backtrace.first(5).join('\n')}"
+    rescue DropboxService::DropboxError => e
+      Rails.logger.error "Failed to upload zine #{id} to Dropbox: #{e.class} - #{e.message}"
+      Rails.logger.error "Dropbox upload backtrace: #{e.backtrace.first(5).join('\n')}"
       # Don't raise the error to avoid breaking the save process
       # The file will remain in local storage as fallback
     rescue => e
-      Rails.logger.error "Unexpected error during Box upload for zine #{id}: #{e.class} - #{e.message}"
-      Rails.logger.error "Box upload backtrace: #{e.backtrace.first(5).join('\n')}"
+      Rails.logger.error "Unexpected error during Dropbox upload for zine #{id}: #{e.class} - #{e.message}"
+      Rails.logger.error "Dropbox upload backtrace: #{e.backtrace.first(5).join('\n')}"
     end
 
-    Rails.logger.info "=== BOX UPLOAD END ==="
+    Rails.logger.info "=== DROPBOX UPLOAD END ==="
   end
 
-  def delete_from_box
-    Rails.logger.info "=== BOX FILE DELETE START ==="
-    Rails.logger.info "Box file ID present?: #{box_file_id.present?}"
-    Rails.logger.info "Box file ID: #{box_file_id}" if box_file_id.present?
+  def delete_from_dropbox
+    Rails.logger.info "=== DROPBOX FILE DELETE START ==="
+    Rails.logger.info "Dropbox file ID present?: #{file_id.present?}"
+    Rails.logger.info "Dropbox file ID: #{file_id}" if file_id.present?
 
-    return unless box_file_id.present?
+    return unless file_id.present?
 
     begin
-      Rails.logger.info "Attempting to delete file from Box"
-      if box_service.delete_file(box_file_id)
-        Rails.logger.info "Successfully deleted zine #{id} from Box"
+      Rails.logger.info "Attempting to delete file from Dropbox"
+      if dropbox_service.delete_file(file_id)
+        Rails.logger.info "Successfully deleted zine #{id} from Dropbox"
       else
-        Rails.logger.warn "Failed to delete zine #{id} from Box"
+        Rails.logger.warn "Failed to delete zine #{id} from Dropbox"
       end
-    rescue BoxService::BoxError => e
-      Rails.logger.error "Error deleting zine #{id} from Box: #{e.class} - #{e.message}"
-      Rails.logger.error "Box delete backtrace: #{e.backtrace.first(5).join('\n')}"
+    rescue DropboxService::DropboxError => e
+      Rails.logger.error "Error deleting zine #{id} from Dropbox: #{e.class} - #{e.message}"
+      Rails.logger.error "Dropbox delete backtrace: #{e.backtrace.first(5).join('\n')}"
     rescue => e
-      Rails.logger.error "Unexpected error deleting zine #{id} from Box: #{e.class} - #{e.message}"
-      Rails.logger.error "Box delete backtrace: #{e.backtrace.first(5).join('\n')}"
+      Rails.logger.error "Unexpected error deleting zine #{id} from Dropbox: #{e.class} - #{e.message}"
+      Rails.logger.error "Dropbox delete backtrace: #{e.backtrace.first(5).join('\n')}"
     end
 
-    Rails.logger.info "=== BOX FILE DELETE END ==="
+    Rails.logger.info "=== DROPBOX FILE DELETE END ==="
   end
 
-  def generate_box_filename
+  def generate_dropbox_filename
     timestamp = created_at.strftime("%Y%m%d_%H%M%S")
     sanitized_creator = created_by.gsub(/[^a-zA-Z0-9\-_]/, '_').strip
     "zine_#{id}_#{timestamp}_#{sanitized_creator}.pdf"
   end
 
-  def box_service
-    @box_service ||= BoxService.new
+  def dropbox_service
+    @dropbox_service ||= DropboxService.new
   end
 
   def strip_pdf_metadata
-    # This method is now handled during the Box upload process
+    # This method is now handled during the Dropbox upload process
     # Metadata stripping can be implemented as part of the upload pipeline
-    Rails.logger.info "PDF metadata stripping integrated with Box upload for zine #{id}"
+    Rails.logger.info "PDF metadata stripping integrated with Dropbox upload for zine #{id}"
   end
 
   def notify_admin
@@ -399,10 +399,10 @@ class Zine < ApplicationRecord
     Rails.logger.info "=== POST-SAVE PDF DIMENSIONS VALIDATION END ==="
   end
 
-  def upload_to_box_after_save
-    Rails.logger.info "=== POST-SAVE BOX UPLOAD START ==="
-    upload_to_box
-    Rails.logger.info "=== POST-SAVE BOX UPLOAD END ==="
+  def upload_to_dropbox_after_save
+    Rails.logger.info "=== POST-SAVE DROPBOX UPLOAD START ==="
+    upload_to_dropbox
+    Rails.logger.info "=== POST-SAVE DROPBOX UPLOAD END ==="
   end
 
   def generate_thumbnail_after_save
