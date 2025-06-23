@@ -129,19 +129,48 @@ class ZinesController < ApplicationController
     Rails.logger.info "Current user: #{current_user.id}"
     Rails.logger.info "User authorized?: #{current_user == @zine.user}"
 
+    zine_id = @zine.id
+
     begin
       Rails.logger.info "Attempting to destroy zine"
       if @zine.destroy
         Rails.logger.info "Zine destroyed successfully"
-        redirect_to dashboard_path, notice: 'Your zine has been deleted.'
+
+        respond_to do |format|
+          format.html { redirect_to dashboard_path, notice: 'Your zine has been deleted.' }
+          format.turbo_stream {
+            render turbo_stream: [
+              turbo_stream.remove("zine_#{zine_id}"),
+              turbo_stream.update("flash_messages", partial: "shared/flash", locals: {
+                notice: "Your zine has been deleted."
+              })
+            ]
+          }
+        end
       else
         Rails.logger.error "Failed to destroy zine: #{@zine.errors.full_messages.join(', ')}"
-        redirect_to @zine, alert: 'Failed to delete zine. Please try again.'
+
+        respond_to do |format|
+          format.html { redirect_to @zine, alert: 'Failed to delete zine. Please try again.' }
+          format.turbo_stream {
+            render turbo_stream: turbo_stream.update("flash_messages", partial: "shared/flash", locals: {
+              alert: "Failed to delete zine. Please try again."
+            })
+          }
+        end
       end
     rescue => e
       Rails.logger.error "Exception during zine destruction: #{e.class} - #{e.message}"
       Rails.logger.error "Backtrace: #{e.backtrace.first(5).join('\n')}"
-      redirect_to @zine, alert: 'An error occurred while deleting the zine. Please try again.'
+
+      respond_to do |format|
+        format.html { redirect_to @zine, alert: 'An error occurred while deleting the zine. Please try again.' }
+        format.turbo_stream {
+          render turbo_stream: turbo_stream.update("flash_messages", partial: "shared/flash", locals: {
+            alert: "An error occurred while deleting the zine. Please try again."
+          })
+        }
+      end
     end
 
     Rails.logger.info "=== ZINE DELETE END ==="

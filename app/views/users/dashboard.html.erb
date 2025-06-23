@@ -21,7 +21,11 @@
   <%= link_to "Browse All Zines", root_path, class: "btn btn-secondary" %>
 </div>
 
-<div class="user-zines">
+<div id="flash_messages">
+  <%= render "shared/flash", notice: notice, alert: alert %>
+</div>
+
+<div class="user-zines" data-controller="delete-confirmation">
   <div class="zines-header">
     <h2>Your Zines</h2>
     <div class="view-toggle">
@@ -34,7 +38,7 @@
     <!-- Grid View -->
     <div id="grid-view" class="zines-grid">
       <% @zines.each do |zine| %>
-        <div class="zine-card">
+        <div class="zine-card" id="zine_<%= zine.id %>">
           <div class="zine-thumbnail">
             <%= link_to zine_path(zine) do %>
               <img src="<%= zine.thumbnail_url %>" alt="<%= zine.created_by %>" loading="lazy">
@@ -52,12 +56,18 @@
             <p class="zine-creator">by <%= zine.created_by %></p>
             <p class="zine-category"><%= zine.category.name %></p>
             <p class="zine-date">Uploaded <%= zine.created_at.strftime("%b %d, %Y") %></p>
-            <div class="zine-actions">
+                        <div class="zine-actions">
               <%= link_to "View", zine_path(zine), class: "btn btn-sm btn-primary" %>
               <%= link_to "Edit", edit_zine_path(zine), class: "btn btn-sm btn-secondary" %>
-              <%= link_to "Delete", zine_path(zine), method: :delete,
+              <%= link_to "Delete", "#",
                   class: "btn btn-sm btn-danger",
-                  confirm: "Are you sure you want to delete this zine? This action cannot be undone." %>
+                  data: {
+                    action: "click->delete-confirmation#show",
+                    url: zine_path(zine),
+                    turbo_method: "delete",
+                    confirm_title: "Delete Zine",
+                    confirm_message: "Are you sure you want to delete \"#{zine.title}\"? This action cannot be undone."
+                  } %>
             </div>
           </div>
         </div>
@@ -80,7 +90,7 @@
         </thead>
         <tbody>
           <% @zines.each do |zine| %>
-            <tr>
+            <tr id="zine_<%= zine.id %>">
               <td>
                 <%= link_to zine_path(zine) do %>
                   <img src="<%= zine.thumbnail_url %>" alt="<%= zine.title %>" class="table-thumbnail">
@@ -100,12 +110,18 @@
               </td>
               <td><%= zine.created_at.strftime("%b %d, %Y at %I:%M %p") %></td>
               <td>
-                <div class="action-buttons">
+                                <div class="action-buttons">
                   <%= link_to "View", zine_path(zine), class: "btn btn-sm btn-primary" %>
                   <%= link_to "Edit", edit_zine_path(zine), class: "btn btn-sm btn-secondary" %>
-                  <%= link_to "Delete", zine_path(zine), method: :delete,
+                  <%= link_to "Delete", "#",
                       class: "btn btn-sm btn-danger",
-                      confirm: "Are you sure you want to delete this zine? This action cannot be undone." %>
+                      data: {
+                        action: "click->delete-confirmation#show",
+                        url: zine_path(zine),
+                        turbo_method: "delete",
+                        confirm_title: "Delete Zine",
+                        confirm_message: "Are you sure you want to delete \"#{zine.title}\"? This action cannot be undone."
+                      } %>
                 </div>
               </td>
             </tr>
@@ -127,6 +143,31 @@
       <%= link_to "Upload Your First Zine", new_zine_path, class: "btn btn-primary" %>
     </div>
   <% end %>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" data-delete-confirmation-target="modal" data-action="click->delete-confirmation#closeOnBackdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" data-delete-confirmation-target="title">Delete Zine</h3>
+        <button type="button" class="modal-close" data-action="click->delete-confirmation#close" aria-label="Close">
+          &times;
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-message" data-delete-confirmation-target="message">
+          Are you sure you want to delete this zine? This action cannot be undone.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-action="click->delete-confirmation#cancel">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-danger" data-action="click->delete-confirmation#confirm">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 

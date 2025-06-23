@@ -1,4 +1,4 @@
-<div class="page-header">
+<div class="page-header" data-controller="delete-confirmation">
   <div class="header-content">
     <h1 class="zine-title"><%= @zine.title %></h1>
     <div class="zine-meta">
@@ -11,16 +11,45 @@
   <div class="header-actions">
     <% if user_signed_in? && current_user == @zine.user %>
       <%= link_to "Edit Zine", edit_zine_path(@zine), class: "btn btn-secondary" %>
-      <%= button_to "Delete", zine_path(@zine),
-          method: :delete,
+      <%= link_to "Delete", "#",
           class: "btn btn-danger",
-          form: { style: "display: inline-block;" },
           data: {
-            confirm: "Are you sure you want to delete this zine? This action cannot be undone."
+            action: "click->delete-confirmation#show",
+            url: zine_path(@zine),
+            turbo_method: "delete",
+            confirm_title: "Delete Zine",
+            confirm_message: "Are you sure you want to delete \"#{@zine.title}\"? This action cannot be undone."
           } %>
     <% end %>
     <%= link_to "← Back to Browse", root_path, class: "btn btn-outline" %>
   </div>
+
+  <!-- Delete Confirmation Modal -->
+  <% if user_signed_in? && current_user == @zine.user %>
+    <div class="modal-overlay" data-delete-confirmation-target="modal" data-action="click->delete-confirmation#closeOnBackdrop">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3 class="modal-title" data-delete-confirmation-target="title">Delete Zine</h3>
+          <button type="button" class="modal-close" data-action="click->delete-confirmation#close" aria-label="Close">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-message" data-delete-confirmation-target="message">
+            Are you sure you want to delete this zine? This action cannot be undone.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-action="click->delete-confirmation#cancel">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-danger" data-action="click->delete-confirmation#confirm">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  <% end %>
 </div>
 
 <div class="zine-content">
@@ -98,61 +127,6 @@
   <%= link_to "← Back to All Zines", root_path, class: "btn btn-secondary" %>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('=== DELETE BUTTON DEBUG INITIALIZATION ===');
 
-  const deleteButton = document.querySelector('input[value="Delete"]');
-  const deleteForm = document.querySelector('form[action*="/zines/"][method="post"]');
-
-  console.log('Delete button found:', deleteButton);
-  console.log('Delete form found:', deleteForm);
-
-  if (deleteButton) {
-    deleteButton.addEventListener('click', function(e) {
-      console.log('=== DELETE BUTTON CLICKED ===');
-      console.log('Event:', e);
-      console.log('Button:', this);
-      console.log('Form:', this.form);
-
-      // Check if confirmation will show
-      const confirmMessage = this.dataset.confirm;
-      console.log('Confirmation message:', confirmMessage);
-
-      if (confirmMessage) {
-        console.log('Showing confirmation dialog');
-        const confirmed = confirm(confirmMessage);
-        console.log('User confirmed:', confirmed);
-
-        if (!confirmed) {
-          e.preventDefault();
-          console.log('Delete cancelled by user');
-          return false;
-        }
-      }
-
-      console.log('Proceeding with delete');
-    });
-  }
-
-  if (deleteForm) {
-    deleteForm.addEventListener('submit', function(e) {
-      console.log('=== DELETE FORM SUBMISSION ===');
-      console.log('Form:', this);
-      console.log('Action:', this.action);
-      console.log('Method:', this.method);
-      console.log('Form data:', new FormData(this));
-
-      // Log all form elements
-      const formData = new FormData(this);
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
-      }
-    });
-  }
-
-  console.log('=== DELETE BUTTON DEBUG INITIALIZATION COMPLETE ===');
-});
-</script>
 
 
