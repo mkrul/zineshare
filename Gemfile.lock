@@ -233,7 +233,7 @@ GEM
       rack (>= 1.2, < 4)
     orm_adapter (0.5.0)
     ostruct (0.6.2)
-    pagy (8.6.3)
+    pagy (9.3.5)
     parallel (1.27.0)
     parser (3.3.8.0)
       ast (~> 2.4.1)
@@ -442,7 +442,7 @@ DEPENDENCIES
   jbuilder
   kamal
   mini_magick (~> 4.12)
-  pagy (~> 8.0)
+  pagy (~> 9.3)
   pdf-reader (~> 2.11)
   pg (~> 1.1)
   prawn (~> 2.4)

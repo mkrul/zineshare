@@ -51,7 +51,7 @@ gem "prawn", "~> 2.4"
 gem "dropbox_api", "~> 0.1.21"
 
 # Pagination for infinite scrolling
-gem "pagy", "~> 8.0"
+gem "pagy", "~> 9.3"
 
 # User authentication and registration
 gem "devise", "~> 4.9"
