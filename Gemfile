@@ -41,7 +41,7 @@ gem "thruster", require: false
 gem "image_processing", "~> 1.2"
 
 # Additional image processing for PDF thumbnails
-gem "mini_magick", "~> 4.12"
+gem "mini_magick", "~> 5.3"
 
 # PDF processing for dimension validation and metadata removal
 gem "pdf-reader", "~> 2.11"
